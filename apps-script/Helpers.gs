@@ -222,8 +222,39 @@ function escapeHtml_(s) {
 
 // ---------- Emails ----------
 
+/**
+ * Sends one email (MailApp options) and records it on the Activity Log:
+ * "Email sent" with who it went to, or "Email NOT sent" with Google's reason.
+ * A failed email never stops a volunteer's answer from being saved.
+ */
+function sendEmail_(options) {
+  try {
+    MailApp.sendEmail(options);
+    logActivity_('', 'Email sent', 'To ' + options.to + ': ' + options.subject);
+    return '';
+  } catch (e) {
+    try { logActivity_('', 'Email NOT sent', 'To ' + options.to + ': ' + options.subject + ' (' + e.message + ')'); } catch (e2) { /* nothing more to do */ }
+    return e.message;
+  }
+}
+
+/** Menu item: sends a test email to the report email, and says what happened. */
+function sendTestEmail() {
+  menuOnly_();
+  const ui = SpreadsheetApp.getUi();
+  const to = reportEmail_();
+  const problem = sendEmail_({ to: to, subject: 'Volunteer Scheduler test email', name: churchName_() + ' Volunteer Scheduler',
+    body: 'This is a test from the Volunteer Scheduler. If you\'re reading it, your emails will arrive here.' });
+  let left = '';
+  try { left = '\n\nEmails left today: ' + MailApp.getRemainingDailyQuota() + '.'; } catch (e) { /* not shown */ }
+  ui.alert(problem
+    ? 'Google wouldn\'t send the email:\n\n' + problem
+    : 'Sent to ' + to + ' from ' + Session.getEffectiveUser().getEmail() + '.\n\n' +
+      'If it doesn\'t arrive in a minute or two, search that inbox for "Volunteer Scheduler" in every folder (including Spam).' + left);
+}
+
 function notifyProblem_(text) {
-  MailApp.sendEmail({ to: reportEmail_(), subject: 'Volunteer Scheduler: needs your attention', body: text, name: 'Volunteer Scheduler' });
+  sendEmail_({ to: reportEmail_(), subject: 'Volunteer Scheduler: needs your attention', body: text, name: 'Volunteer Scheduler' });
 }
 
 /** Sends an email of sections ({title, items: [{text, link}], empty}) as plain text and simple HTML. */
@@ -231,7 +262,7 @@ function sendSectionsEmail_(to, subject, greeting, intro, sections) {
   const text = (greeting ? greeting + '\n\n' : '') + intro + '\n\n' + sections.map((s) =>
     (s.title ? s.title.toUpperCase() + '\n' : '') +
     (s.items.length ? s.items.map((i) => '• ' + i.text + (i.link ? ': ' + i.link : '')).join('\n') : (s.empty || ''))).join('\n\n');
-  MailApp.sendEmail({
+  sendEmail_({
     to: to, subject: subject, name: churchName_() + ' Volunteer Scheduler',
     body: text, htmlBody: sectionsHtml_(greeting ? escapeHtml_(greeting) : '', escapeHtml_(intro), sections),
   });

@@ -114,6 +114,12 @@ Someone on two teams is recognized by their mobile number: one link, one page, a
 2. In the spreadsheet, click **Volunteer Scheduler → Run setup**.
 3. Update the web app: **Deploy → Manage deployments**, the **pencil icon**, **Version: New version**, **Deploy**. The link stays the same.
 
+## If something goes wrong
+
+- **No emails arriving:** click **Volunteer Scheduler → Send a test email**. It tells you which address it sent to and from, or Google's reason if it couldn't send. Every email the scheduler sends (or fails to send) is also listed on the **Activity Log** tab.
+- **A link shows "Sorry, unable to open the file at this time":** that's Google, usually when the phone's browser is signed in to more than one Google account. Open the link in Chrome, or long-press it and open it in a private tab.
+- **Errors in general:** in Apps Script, click **Executions** on the left to see each run and any error.
+
 ## Privacy notes
 
 - A volunteer's page shows only their own Sundays and the open spots they could cover. It doesn't show anyone's phone number.

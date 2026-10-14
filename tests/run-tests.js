@@ -231,7 +231,10 @@ function makeWorld(codeOverride) {
         return { getResponseCode: () => 200, getContentText: () => JSON.stringify(reply) };
       },
     },
-    MailApp: { sendEmail: (o) => { if (world.failMail) throw new Error('Service invoked too many times'); world.sent.push(o); } },
+    MailApp: {
+      sendEmail: (o) => { if (world.failMail) throw new Error('Service invoked too many times'); world.sent.push(o); },
+      getRemainingDailyQuota: () => 99,
+    },
     GmailApp: {
       search: (q) => { world.searches.push(q); return world.gmail; },
       getUserLabelByName: (n) => world.labels[n] || null,
@@ -633,6 +636,22 @@ test('Connect Twilio checks the details before saving', () => {
   w.promptAnswer = ['AC1', 'SK1', 'secret', '+18645550100'];
   w.run('connectTwilio()');
   assert.strictEqual(w.props.TWILIO_FROM, '+18645550100');
+});
+
+test('"Send a test email" says where it went; every email is on the Activity Log, and a failed one doesn\'t stop an answer', () => {
+  const w = asked();
+  w.run('sendTestEmail()');
+  assert.strictEqual(w.sent.pop().to, 'pastor@example.com');
+  const a = w.alerts.pop();
+  assert(a.startsWith('Sent to pastor@example.com from church.connect@gmail.com.') && a.includes('Emails left today: 99.'), a);
+  const log = w.rows('Activity Log');
+  assert(log.some((r) => r['What happened'] === 'Email sent' && r['Details'] === 'To pastor@example.com: November schedule sent'));
+  w.failMail = true;
+  w.run('sendTestEmail()');
+  assert(w.alerts.pop().startsWith('Google wouldn\'t send the email:\n\nService invoked too many times'));
+  assert.strictEqual(w.act('Tom', 'cant', 22, 'Livestream Producer'), 'Thanks for letting us know. We\'ll find someone to cover Livestream Producer on Nov 22.');
+  assert.strictEqual(w.spot(22, 'Livestream Producer')['Status'], 'Open');
+  assert(w.rows('Activity Log').some((r) => r['What happened'] === 'Email NOT sent' && r['Details'].startsWith('To pastor@example.com: Tom Smith can\'t serve')));
 });
 
 // ---------- Run ----------

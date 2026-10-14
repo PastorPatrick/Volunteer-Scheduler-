@@ -74,6 +74,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Connect Twilio', 'connectTwilio')
     .addItem('Send a test text', 'sendTestText')
+    .addItem('Send a test email', 'sendTestEmail')
     .addItem('Connect Elvanto', 'connectElvanto')
     .addSeparator()
     .addItem('Run setup', 'setup')

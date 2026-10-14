@@ -119,14 +119,14 @@ function tellCoordinatorCant_(person, r, wasConfirmed, asked, now) {
   const subject = person.name + ' can\'t serve ' + r._position + ' on ' + formatDay_(r['Sunday']);
   const body = person.name + (wasConfirmed ? ' had confirmed, but' : '') + ' just said they can\'t serve ' + r._position + ' (' + r._team + ') on ' +
     formatDay_(r['Sunday']) + '.\n\n' + cover + (wasConfirmed ? '\n\nIf they were already in Elvanto, take them off there.' : '');
-  MailApp.sendEmail({ to: recipientsFor_([r._team]), subject: subject, name: churchName_() + ' Volunteer Scheduler', body: body,
+  sendEmail_({ to: recipientsFor_([r._team]), subject: subject, name: churchName_() + ' Volunteer Scheduler', body: body,
     htmlBody: sectionsHtml_('', escapeHtml_(body).replace(/\n/g, '<br>'), []) });
 }
 
 /** To you: a spot someone couldn't make has been covered. */
 function tellCoordinatorCovered_(v, r) {
   const body = v.name + ' will cover ' + r._position + ' (' + r._team + ') on ' + formatDay_(r['Sunday']) + '. Add them in Elvanto.';
-  MailApp.sendEmail({ to: recipientsFor_([r._team]), subject: 'Covered: ' + r._position + ' on ' + formatDay_(r['Sunday']) + ' (' + v.name + ')',
+  sendEmail_({ to: recipientsFor_([r._team]), subject: 'Covered: ' + r._position + ' on ' + formatDay_(r['Sunday']) + ' (' + v.name + ')',
     name: churchName_() + ' Volunteer Scheduler', body: body, htmlBody: sectionsHtml_('', escapeHtml_(body), []) });
 }
 
