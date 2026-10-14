@@ -364,6 +364,38 @@ test('"Check the rotation" flags names not on the team, inactive, untrained, no 
   assert(a.includes('3rd Sunday: Jen Park is in two positions (Media ProPresenter and Media Livestream Producer).'), a);
 });
 
+test('a test with a test team doesn\'t stop the real ask day, and reminders are timed from each person\'s own text', () => {
+  const w = scheduler();
+  // Set up a Test team with just Pat, and switch the media team off for the test.
+  w.tab('Teams').appendRow(['Test', 'Test Position', '', '', true]);
+  w.run('setCells_(getTab_("Teams"), 2, {"Active": false})');
+  w.run('setup()');
+  w.tab('Test Team').appendRow(['Pat Pastor', '8645550199', true, true]);
+  w.tab('Test Rotation').data[1] = ['Test Position', 'Pat Pastor', '', '', '', ''];
+  w.clock(2026, 10, 10, 12);
+  w.run('sendNextMonthNow()');
+  assert(w.texts.every((t) => t.To === '+18645550199'), 'only Pat');
+  assert.deepStrictEqual(w.texts.map((t) => t.Body.split('!')[1].trim().split(' ').slice(0, 3).join(' ')), ['Here\'s when you\'re', 'Can you cover'],
+    'Pat sees both kinds of text: their Sundays, and a cover request for the empty Sundays');
+  assert(w.page('Tom', w.code('Tom')).includes('This link doesn\'t work'), 'the media team is switched off');
+  w.jobs(2026, 10, 13, 10, 0);
+  assert.deepStrictEqual(w.texts.filter((t) => t.Body.includes('just a reminder')).map((t) => t.To), ['+18645550199'], 'Pat\'s own reminder, 3 days after the test');
+  // Clean up: delete the test rows, switch the media team back on.
+  const sched = w.tab('Schedule');
+  sched.data.length = 1;
+  w.run('setCells_(getTab_("Teams"), 3, {"Active": false}); setCells_(getTab_("Teams"), 2, {"Active": true})');
+  w.texts.length = 0;
+  w.jobs(2026, 10, 15, 10, 0);
+  assert.strictEqual(w.texts.filter((t) => /Here's when/.test(t.Body)).length, 4, 'the ask day still texts the whole media team');
+  assert.strictEqual(w.rows('Schedule').length, 20);
+  w.jobs(2026, 10, 16, 10, 0);
+  assert.strictEqual(w.texts.filter((t) => /Here's when/.test(t.Body)).length, 4, 'once');
+  w.jobs(2026, 10, 17, 10, 0);
+  assert(!w.texts.some((t) => t.Body.includes('just a reminder')), 'not yet');
+  w.jobs(2026, 10, 18, 10, 0);
+  assert.strictEqual(w.texts.filter((t) => t.Body.includes('just a reminder')).length, 4, '3 days after their own text');
+});
+
 test('the 15th at 10am: one text per person listing their Sundays; nothing before 10am, and only once', () => {
   const w = scheduler();
   w.jobs(2026, 10, 15, 9, 0);

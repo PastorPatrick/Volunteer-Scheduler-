@@ -5,7 +5,7 @@ Confirms each month's serving schedule with volunteers by text, and finds cover 
 ## How it works
 
 1. **You set up each team once:** who's trained in which positions (checkboxes), and the usual rotation, meaning who serves each position on the 1st through 5th Sunday of the month.
-2. **On the 15th,** everyone in next month's rotation gets one text listing their Sundays, with a link to their own page. They tap **Yes to all**, or **Can't** for any Sunday.
+2. **On the ask day** (the 15th to start; you can change it), everyone in next month's rotation gets one text listing their Sundays, with a link to their own page. They tap **Yes to all**, or **Can't** for any Sunday.
 3. **Open spots** go out for cover by text. That means every "Can't", every blank in the rotation, and every 5th Sunday. Each text goes to everyone trained in that position who is active and free that Sunday. The first to say yes gets it and is texted a confirmation.
 4. **You hear by email:**
    - right away when anyone says they can't, even after confirming;

@@ -12,6 +12,8 @@
  *       Empty spots (like 5th Sundays) open right away.
  *   3 days later:   a reminder text to anyone who hasn't answered.
  *   5 days later:   you get an email listing anyone still silent.
+ *       (Both are timed from each person's own text, so someone added and
+ *       texted later, or a test, gets their own timing.)
  *   Any "Can't":    you get an email right away (even if they'd confirmed),
  *       and the spot opens.
  *   An open spot:   everyone trained in that position, active, and not
@@ -182,15 +184,6 @@ function askMonth_(month, now) {
     asked.push(person.name);
   });
 
-  // Remember the ask, for the reminder and the no-answer email. Asking again
-  // about the same month (for someone just added) keeps the original dates.
-  const props = PropertiesService.getScriptProperties();
-  let state = null;
-  try { state = JSON.parse(props.getProperty('MONTH_ASK') || 'null'); } catch (e) { state = null; }
-  if (!state || state.month !== monthKey) {
-    props.setProperty('MONTH_ASK', JSON.stringify({ month: monthKey, asked: now.getTime(), reminded: false, noAnswer: false }));
-  }
-
   const covers = sendCoverRequests_(now, true);
   const open = scheduleRows_().filter((r) => r._day.slice(0, 7) === monthKey && r._status === STATUS.OPEN && !r._serving);
   if (asked.length || notReached.length || open.length) {
@@ -280,31 +273,45 @@ function recipientsFor_(teamNames) {
 
 // ---------- Reminder and no-answer ----------
 
-/** 3 days after the ask: a reminder text to everyone still Waiting for that month. */
-function remindNoAnswer_(state) {
-  const rows = scheduleRows_().filter((r) => r._day.slice(0, 7) === state.month && r._status === STATUS.WAITING && r._serving && r['Asked']);
-  const month = monthName_(rows.length ? rows[0]['Sunday'] : new Date());
-  const done = {};
-  rows.forEach((r) => {
-    if (!r._mobile || done[r._mobile]) return;
-    done[r._mobile] = true;
-    textPerson_({ name: r._serving, first: r._serving.split(/\s+/)[0], mobile: r._mobile }, 'Reminder', { month: month });
-  });
-  return Object.keys(done).length;
+/**
+ * Spots still Waiting that someone was texted about at least `days` days ago,
+ * and that haven't had `column` filled in yet. Each spot is timed from its own
+ * text, so a test send or a late addition never throws off anyone else.
+ */
+function waitingSince_(now, days, column) {
+  const today = ymd_(now);
+  return scheduleRows_().filter((r) => r._status === STATUS.WAITING && r._serving && r._day >= today &&
+    r['Asked'] instanceof Date && daysSince_(r['Asked'], now) >= days && !r[column]);
 }
 
-/** 5 days after the ask: everyone who still hasn't answered, to you. */
-function emailNoAnswer_(state) {
-  const rows = scheduleRows_().filter((r) => r._day.slice(0, 7) === state.month && r._status === STATUS.WAITING && r._serving);
+/** 3 days after their text: a reminder to anyone who hasn't answered. */
+function remindNoAnswer_(now) {
+  const rows = waitingSince_(now, REMIND_AFTER_DAYS, 'Reminded');
+  const tab = getTab_(TABS.SCHEDULE);
+  const byPerson = {};
+  rows.forEach((r) => { if (r._mobile) (byPerson[r._mobile] = byPerson[r._mobile] || []).push(r); });
+  Object.keys(byPerson).forEach((mobile) => {
+    const mine = byPerson[mobile];
+    const first = mine[0];
+    textPerson_({ name: first._serving, first: first._serving.split(/\s+/)[0], mobile: mobile }, 'Reminder', { month: monthName_(first['Sunday']) });
+    mine.forEach((r) => setCells_(tab, r._row, { 'Reminded': now }));
+  });
+  return Object.keys(byPerson).length;
+}
+
+/** 5 days after their text: everyone who still hasn't answered, to you. */
+function emailNoAnswer_(now) {
+  const rows = waitingSince_(now, NO_ANSWER_AFTER_DAYS, 'No-answer notice');
   if (!rows.length) return 0;
   const byPerson = {};
   rows.forEach((r) => { (byPerson[r._serving] = byPerson[r._serving] || []).push(r); });
-  const month = monthName_(rows[0]['Sunday']);
   sendSectionsEmail_(recipientsFor_(rows.map((r) => r._team)), 'No answer yet: ' + Object.keys(byPerson).join(', '), '',
-    'These volunteers haven\'t confirmed their ' + month + ' Sundays, even after a reminder. They\'re still on the schedule; you may want to check with them.', [
+    'These volunteers haven\'t confirmed their Sundays, even after a reminder. They\'re still on the schedule; you may want to check with them.', [
       { title: '', items: Object.keys(byPerson).map((n) => ({ text: n + (byPerson[n][0]._mobile ? ', ' + formatPhone_(byPerson[n][0]._mobile) : ', no mobile number') +
         ': ' + joinWords_(byPerson[n].map(spotWords_)) })) },
     ]);
+  const tab = getTab_(TABS.SCHEDULE);
+  rows.forEach((r) => setCells_(tab, r._row, { 'No-answer notice': now }));
   return Object.keys(byPerson).length;
 }
 
@@ -370,25 +377,21 @@ function runScheduledJobs_(now) {
     const hour = Number(Utilities.formatDate(now, tz, 'H'));
     const weekday = Number(Utilities.formatDate(now, tz, 'u'));
     const props = PropertiesService.getScriptProperties();
-    let state = null;
-    try { state = JSON.parse(props.getProperty('MONTH_ASK') || 'null'); } catch (e) { state = null; }
-    const save = () => props.setProperty('MONTH_ASK', JSON.stringify(state));
 
-    // The monthly ask: on the ask day (or later, if it was missed), about next month.
+    // The monthly ask: on the ask day (or later, if it was missed), about next
+    // month, once. Sending from the menu (for example a test) doesn't count:
+    // the ask day still sends to everyone not texted yet.
     const askDay = Math.min(Number(getSettingText_('Ask day')) || 0, 28);
-    const next = new Date(now.getFullYear(), now.getMonth() + 1, 1, 12);
-    if (askDay && now.getDate() >= askDay && hour >= ASK_HOUR && (!state || state.month < ymd_(next).slice(0, 7))) {
-      try { askMonth_(next, now); } catch (e) { reportProblemOnce_('monthly text', now, e); }
-    } else if (state && hour >= ASK_HOUR) {
-      const since = daysSince_(new Date(state.asked), now);
-      if (!state.reminded && since >= REMIND_AFTER_DAYS) {
-        state.reminded = true; save();
-        try { remindNoAnswer_(state); } catch (e) { reportProblemOnce_('reminder', now, e); }
-      }
-      if (!state.noAnswer && since >= NO_ANSWER_AFTER_DAYS) {
-        state.noAnswer = true; save();
-        try { emailNoAnswer_(state); } catch (e) { reportProblemOnce_('no-answer email', now, e); }
-      }
+    const nextKey = ymd_(new Date(now.getFullYear(), now.getMonth() + 1, 1, 12)).slice(0, 7);
+    if (askDay && now.getDate() >= askDay && hour >= ASK_HOUR && props.getProperty('AUTO_ASKED') !== nextKey) {
+      try {
+        askMonth_(new Date(now.getFullYear(), now.getMonth() + 1, 1, 12), now);
+        props.setProperty('AUTO_ASKED', nextKey);
+      } catch (e) { reportProblemOnce_('monthly text', now, e); }
+    }
+    if (hour >= ASK_HOUR) {
+      try { remindNoAnswer_(now); } catch (e) { reportProblemOnce_('reminder', now, e); }
+      try { emailNoAnswer_(now); } catch (e) { reportProblemOnce_('no-answer email', now, e); }
     }
 
     try { sendCoverRequests_(now, false); } catch (e) { reportProblemOnce_('cover request', now, e); }

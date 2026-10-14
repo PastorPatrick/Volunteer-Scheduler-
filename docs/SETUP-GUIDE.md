@@ -23,7 +23,7 @@ Setup makes a **Media Team** tab and a **Media Rotation** tab, with the position
 
 ## Step 4: Fill in the team
 
-1. **Settings tab:** your church name and **Report email** (where your emails go). **Ask day** is the 15th.
+1. **Settings tab:** your church name and **Report email** (where your emails go). **Ask day** is the 15th to start; any day up to the 28th works.
 2. **Media Team tab:** one row per volunteer, with their name, mobile number, **Active** checked, and a check under each position they're trained in. Cover requests go to everyone checked for that position, so only check what they can actually do.
 3. **Media Rotation tab:** for each position, pick who usually serves on the 1st, 2nd, 3rd, 4th and 5th Sunday (each cell is a dropdown of the team). Leave a cell blank when nobody usually serves; that spot is sent out for cover each month. The 5th Sunday column is usually blank.
 4. Click **Volunteer Scheduler → Check the rotation**. It lists anything to fix, such as someone without a mobile number, someone not checked as trained, or someone in two positions on the same Sunday.
@@ -46,9 +46,28 @@ Click **Volunteer Scheduler → Connect Twilio** and enter the Account SID, the 
 
 Click **Volunteer Scheduler → Connect Elvanto** and paste the church's Elvanto API key (Elvanto → Settings → Developers → API). Check **Elvanto service name** on the Settings tab ("Sunday Service" to start). The Monday report then flags anyone not entered in Elvanto yet. It matches by name, so use the same names as in Elvanto.
 
-## Step 8: Try it
+## Step 8: Try it on yourself first
 
-Click **Volunteer Scheduler → Send next month's schedule now**. Everyone in next month's rotation gets their text, open spots go out for cover, and you get an email of what was sent. It's safe to run again: only people not yet texted about that month get a text. If you'd rather not wait for the 15th, this is also how to send early.
+This uses a small test team, so your real rotation stays exactly as it is.
+
+1. On the **Teams** tab, add a row: Team **Test**, Positions **Test Position**, and **Active** checked. Uncheck **Active** on the **Media** row for now.
+2. Click **Volunteer Scheduler → Run setup**. It makes a **Test Team** and a **Test Rotation** tab.
+3. On **Test Team**, add yourself with your mobile, Active checked, and **Test Position** checked.
+4. On **Test Rotation**, put yourself in the **1st Sunday** cell only.
+5. Click **Volunteer Scheduler → Send next month's schedule now.** You'll get two texts:
+   - **your Sundays:** the 1st Sunday;
+   - **a cover request:** for the empty Sundays.
+
+   You'll also get an email of what was sent. Tap the link and try the buttons: **I'll be there**, **Can't** (you'll get the right-away email), and **I can cover**.
+6. **Clean up:**
+   - on the **Schedule** tab, delete the Test rows;
+   - on the **Teams** tab, uncheck **Active** on the Test row and check it again on the Media row.
+
+   (You can delete the Test tabs too, or keep them for next time.)
+
+The test doesn't change anything for the real send: on the ask day, everyone in the media rotation is still texted. Reminders are timed from each person's own text.
+
+**To send the real schedule early instead of waiting for the ask day,** use **Send next month's schedule now** with the media team switched on. It only texts people who haven't been texted about that month yet.
 
 ---
 
@@ -56,10 +75,10 @@ Click **Volunteer Scheduler → Send next month's schedule now**. Everyone in ne
 
 | When | Who | What |
 |---|---|---|
-| The 15th, 10am | Everyone in next month's rotation (text) | One text listing their Sundays and a link: **Yes to all**, or **Can't** for any Sunday |
-| The 15th | You (email) | What was sent, which spots are open, and anyone who couldn't be texted |
-| The 18th, 10am | Anyone who hasn't answered (text) | A reminder |
-| The 20th, 10am | You (email) | Anyone who still hasn't answered, with their mobile number |
+| The ask day (the 15th to start), 10am | Everyone in next month's rotation (text) | One text listing their Sundays and a link: **Yes to all**, or **Can't** for any Sunday |
+| The ask day | You (email) | What was sent, which spots are open, and anyone who couldn't be texted |
+| 3 days later, 10am | Anyone who hasn't answered (text) | A reminder |
+| 5 days later, 10am | You (email) | Anyone who still hasn't answered, with their mobile number |
 | Mondays, 8am | You (email) | The month ahead: every Sunday and position, who's on, what's open, who hasn't answered, who isn't in Elvanto yet |
 
 ## When someone can't
@@ -69,7 +88,7 @@ Click **Volunteer Scheduler → Send next month's schedule now**. Everyone in ne
 - **The first to say yes gets it.** They get a confirmation text, and you get a "Covered" email so you can add them in Elvanto. Anyone who taps after that is told it's already covered.
 - **If nobody says yes,** you get an email after 3 days, or after 1 day if that Sunday is less than a week away. If nobody else is trained and free, you're told right away.
 
-Open spots from the rotation (blank cells and 5th Sundays) work the same way, starting on the 15th.
+Open spots from the rotation (blank cells and 5th Sundays) work the same way, starting on the ask day.
 
 ## Changing the schedule by hand
 

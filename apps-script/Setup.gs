@@ -33,7 +33,7 @@ const WEEK_COLUMNS = ['1st Sunday', '2nd Sunday', '3rd Sunday', '4th Sunday', '5
 const COLUMNS = {
   TEAMS: ['Team', 'Positions', 'Leader', 'Leader email', 'Active'],
   SCHEDULE: ['Sunday', 'Team', 'Position', 'Serving', 'Status', 'Usual', 'Mobile', 'Asked', 'Answered',
-    'Open since', 'Cover texted', 'Can\'t', 'Uncovered notice', 'Notes'],
+    'Open since', 'Cover texted', 'Can\'t', 'Uncovered notice', 'Reminded', 'No-answer notice', 'Notes'],
   TEMPLATES: ['Template', 'When it\'s sent', 'Message'],
   SETTINGS: ['Setting', 'Value', 'What it does'],
   ACTIVITY: ['When', 'Volunteer', 'What happened', 'Details'],
